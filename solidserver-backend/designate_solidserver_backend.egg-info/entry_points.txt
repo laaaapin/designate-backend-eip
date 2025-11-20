@@ -1,0 +1,2 @@
+[designate.backend]
+solidserver = solidserver_backend:SolidServerBackend

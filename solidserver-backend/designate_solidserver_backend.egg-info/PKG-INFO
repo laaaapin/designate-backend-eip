@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: designate-solidserver-backend
+Version: 1.0.0
+Summary: SOLIDserver DNS backend for OpenStack Designate
+Home-page: https://github.com/example/designate-solidserver-backend
+Author: Your Organization
+Author-email: support@example.com
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Dist: designate>=12.0.0
+Requires-Dist: oslo.log>=4.0.0
+Requires-Dist: oslo.config>=8.0.0
+Requires-Dist: requests>=2.25.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: summary

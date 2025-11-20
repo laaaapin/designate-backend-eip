@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+solidserver_backend.py
+designate_solidserver_backend.egg-info/PKG-INFO
+designate_solidserver_backend.egg-info/SOURCES.txt
+designate_solidserver_backend.egg-info/dependency_links.txt
+designate_solidserver_backend.egg-info/entry_points.txt
+designate_solidserver_backend.egg-info/requires.txt
+designate_solidserver_backend.egg-info/top_level.txt

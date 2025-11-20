@@ -4,12 +4,19 @@ Setup script for designate-solidserver-backend
 """
 
 from setuptools import setup, find_packages
+import os
+
+# Read long description if available
+long_description = ''
+if os.path.exists('README.rst'):
+    with open('README.rst') as f:
+        long_description = f.read()
 
 setup(
     name='designate-solidserver-backend',
     version='1.0.0',
     description='SOLIDserver DNS backend for OpenStack Designate',
-    long_description=open('README.rst').read(),
+    long_description=long_description,
     author='Your Organization',
     author_email='support@example.com',
     url='https://github.com/example/designate-solidserver-backend',
