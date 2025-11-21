@@ -51,6 +51,11 @@ SOLIDSERVER_OPTS = [
         help='Verify SSL certificate',
         default=False
     ),
+    cfg.IntOpt(
+        'timeout',
+        help='Default HTTP request timeout (seconds)',
+        default=5,
+    ),
 ]
 
 CONF = cfg.CONF
@@ -75,19 +80,17 @@ class SolidServerBackend(base.Backend):
         self.password = CONF.solidserver.password
         self.ssl = CONF.solidserver.ssl
         self.verify_ssl = CONF.solidserver.verify_ssl
+        # Default request timeout (seconds)
+        self.timeout = CONF.solidserver.timeout
         
         # Build API base URL
         protocol = 'https' if self.ssl else 'http'
         self.api_url = f'{protocol}://{self.url}/api/v2.0'
-        
-        # Create session with authentication
-        self.session = requests.Session()
-        self.session.auth = HTTPBasicAuth(self.user, self.password)
-        self.session.verify = self.verify_ssl
-        self.session.headers.update({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        })
+
+        # Lazy session: do not create a requests.Session during import/instantiation
+        # because that may cause side-effects in container startup. The session
+        # will be created on first API call by `_ensure_session()`.
+        self.session = None
         
         LOG.info(
             'Initialized SOLIDserver backend: url=%s, space=%s, ssl=%s',
@@ -96,7 +99,7 @@ class SolidServerBackend(base.Backend):
             self.ssl
         )
 
-    def _request(self, method, endpoint, data=None, params=None):
+    def _request(self, method, endpoint, data=None, params=None, timeout=None):
         """Make a request to the SOLIDserver API.
 
         Args:
@@ -111,15 +114,19 @@ class SolidServerBackend(base.Backend):
         Raises:
             exceptions.BackendException: If API request fails
         """
+        # Ensure HTTP session exists (lazy init)
+        self._ensure_session()
+
         url = urljoin(self.api_url, endpoint)
         
         try:
+            req_timeout = timeout if timeout is not None else self.timeout
             response = self.session.request(
                 method,
                 url,
                 json=data,
                 params=params,
-                timeout=30
+                timeout=req_timeout
             )
             response.raise_for_status()
             
@@ -153,6 +160,23 @@ class SolidServerBackend(base.Backend):
             'zone_space': self.space,
             'row_state': 1,  # Enable the zone
         }
+
+    def _ensure_session(self):
+        """Create and configure the requests.Session if not already present.
+
+        This is intentionally lazy to avoid performing network-related setup
+        during module import or backend instantiation which can delay or
+        block service startup.
+        """
+        if self.session is None:
+            sess = requests.Session()
+            sess.auth = HTTPBasicAuth(self.user, self.password)
+            sess.verify = self.verify_ssl
+            sess.headers.update({
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            })
+            self.session = sess
 
     def _get_record_params(self, zone, recordset, record):
         """Extract record parameters for SOLIDserver API.
@@ -475,8 +499,9 @@ class SolidServerBackend(base.Backend):
         LOG.debug('Pinging SOLIDserver API')
         
         try:
-            # Try to list zones (minimal operation)
-            result = self._request('GET', '/dns/zone/count')
+            # Try to list zones (minimal operation) with short timeout to avoid
+            # blocking service startup when SOLIDserver is unreachable.
+            result = self._request('GET', '/dns/zone/count', timeout=5)
             
             if result.get('success'):
                 LOG.debug('SOLIDserver API is reachable')
